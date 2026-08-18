@@ -16,9 +16,11 @@ import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from distributed_utils import reduce_value
 
-from models.gtcrn_end2end import GTCRN as Model
+# from models.gtcrn_end2end import GTCRN as Model
+from models.ulunas import ULUNAS as Model
 from loss_factory import HybridLoss as Loss
-from dataloader_dns3 import DNS3Dataset as Dataset
+# from dataloader_dns3 import DNS3Dataset as Dataset
+from dataloader import DNS3Dataset as Dataset
 from scheduler import LinearWarmupCosineAnnealingLR as WarmupLR
 
 seed = 43
@@ -234,7 +236,9 @@ class Trainer:
 
             clean = clean.cpu().numpy()
             enhanced = enhanced.detach().cpu().numpy()
-            pesq_score_batch = Parallel(n_jobs=-1)(
+            # pesq_score_batch = Parallel(n_jobs=-1)(
+            #     delayed(pesq)(16000, c, e, 'wb') for c, e in zip(clean, enhanced))
+            pesq_score_batch = Parallel(n_jobs=1)(
                 delayed(pesq)(16000, c, e, 'wb') for c, e in zip(clean, enhanced))
             pesq_score = torch.tensor(pesq_score_batch, device=self.device).mean()
             if self.world_size > 1:
@@ -280,9 +284,10 @@ class Trainer:
             self._set_train_mode()
             self._train_epoch(epoch)
 
-            self._set_eval_mode()
-            valid_loss, score = self._validation_epoch(epoch)
-            
+            # self._set_eval_mode()
+            # valid_loss, score = self._validation_epoch(epoch)
+
+            score = 0
             if self.config['scheduler']['update_interval'] == 'epoch':
                 if self.config['scheduler']['use_plateau']:
                     self.scheduler.step(score)

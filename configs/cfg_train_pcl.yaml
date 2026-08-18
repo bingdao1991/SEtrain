@@ -1,0 +1,95 @@
+network_config:
+  n_fft: 512
+  hop_len: 256
+  win_len: 512
+  mask_activation: sigmoid       # sigmoid | softmax
+  enforce_mask_sum: false
+
+pretrain:
+  enabled: false
+  ulunas_checkpoint: null          # path to original ULUNAS .tar checkpoint
+  init_noise_mask: complement      # complement | random | zero
+
+pcl:
+  enabled: true
+  num_patches: 256
+  embed_dim: 128
+  use_mlp: true
+  temperature: 0.07
+  warmup_steps: 10000
+  lambda_pcl_target: 2.0
+
+training_phase: phase2             # phase2: dual output only; phase3: enable PCL warmup
+
+DDP:
+  world_size: 1
+
+optimizer:
+  lr: 0.0005
+
+scheduler:
+  kwargs:
+    warmup_steps: 25000
+    decay_until_step: 250000
+    max_lr: 1e-3
+    min_lr: 1e-6
+  update_interval: step
+
+FFT:
+  n_fft: 512
+  hop_length: 256
+  win_length: 512
+
+loss:
+  n_fft: ${FFT.n_fft}
+  hop_len: ${FFT.hop_length}
+  win_len: ${FFT.win_length}
+  compress_factor: 0.3
+  eps: 1e-12
+  lamda_ri: 30
+  lamda_mag: 70
+  lambda_speech: 1.0
+  lambda_noise: 0.5
+  lambda_recon: 0.3
+  lambda_mask_sum: 0.0
+  recon_loss_type: sisnr
+
+train_dataset:
+  length_in_seconds: 10
+  num_data_tot: 10000
+  num_data_per_epoch: 10000
+  random_start_point: false
+  train: true
+  noise_source: residual           # residual | file
+  noise_dir: null
+  return_noise: true
+
+train_dataloader:
+  batch_size: 16
+  num_workers: 0
+  drop_last: true
+  pin_memory: false
+
+validation_dataset:
+  length_in_seconds: 10
+  random_start_point: false
+  train: false
+  noise_source: residual
+  noise_dir: null
+  return_noise: true
+
+validation_dataloader:
+  batch_size: 4
+  num_workers: 0
+  pin_memory: false
+
+samplerate: 16000
+
+trainer:
+  epochs: 100
+  save_checkpoint_interval: 1
+  clip_grad_norm_value: 3.0
+  exp_path: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl
+  resume: false
+  resume_datetime: 2026-07-08-00h00m
+  use_validation: false

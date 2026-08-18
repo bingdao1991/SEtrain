@@ -1,0 +1,14 @@
+# Phase3 Spec-PCL：与 phase2 同一验证集对比
+# 先改 checkpoint 为你当前最新/最佳 .tar
+
+test_dataset:
+  noisy_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/val_noisy
+  clean_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/val_clean
+
+network:
+  # ERB-PCL（弱对比）权重；config 用于建网，推理不算 PCL
+  config: configs/cfg_train_pcl_spec_phase3.yaml
+  # 改成实际权重，例如 model_020.tar / best_model_XXX.tar
+  checkpoint: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_spec_pcl_spec_2026-08-15-22h07m/checkpoints/best_model_100.tar
+  speech_out_dir: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_spec_pcl_spec_2026-08-15-22h07m/infer_val/speech
+  noise_out_dir: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_spec_pcl_spec_2026-08-15-22h07m/infer_val/noise

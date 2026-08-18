@@ -4,7 +4,8 @@ import torch
 import soundfile as sf
 from tqdm import tqdm
 from omegaconf import OmegaConf
-from models.gtcrn_end2end import GTCRN as Model
+# from models.gtcrn_end2end import GTCRN as Model
+from models.ulunas import ULUNAS as Model
 
 def main(args):
     cfg_infer = OmegaConf.load(args.config)
@@ -19,7 +20,12 @@ def main(args):
 
     model = Model(**cfg_network['network_config']).to(device)
     checkpoint = torch.load(cfg_infer.network.checkpoint, map_location=device)
-    model.load_state_dict(checkpoint['model'])
+    # model.load_state_dict(checkpoint['model'])
+    if "model" in checkpoint:
+        model_static_dict = checkpoint['model']
+    else:
+        model_static_dict = checkpoint
+    model.load_state_dict(model_static_dict)
     model.eval()
     
     noisy_wavs = sorted(list(filter(lambda x: x.endswith("wav"), os.listdir(noisy_folder))))

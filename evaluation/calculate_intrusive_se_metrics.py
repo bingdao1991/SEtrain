@@ -6,6 +6,7 @@ from pathlib import Path
 import librosa
 import numpy as np
 import soundfile as sf
+from librosa.core.audio import samplerate
 from pesq import PesqError, pesq
 from pystoi import stoi
 from p_tqdm import p_map
@@ -108,16 +109,16 @@ def main(args):
     ret = []
     
     ### Single thread
-    # for data_pair in tqdm(data_pairs):
-    #     tmp = process_one_pair(data_pair)
-    #     ret.append(tmp)
+    for data_pair in tqdm(data_pairs):
+        tmp = process_one_pair(data_pair)
+        ret.append(tmp)
     
     ### Multi thread    
-    ret = p_map(
-        process_one_pair,
-        data_pairs,
-        num_cpus=args.nj,
-    )
+    # ret = p_map(
+    #     process_one_pair,
+    #     data_pairs,
+    #     num_cpus=args.nj,
+    # )
     
     outdir = Path(args.output_dir)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -139,8 +140,11 @@ def main(args):
 
 def process_one_pair(data_pair):
     uid, ref_path, inf_path = data_pair
-    ref, fs = sf.read(ref_path, dtype="float32")
-    inf, fs2 = sf.read(inf_path, dtype="float32")
+    # ref, fs = sf.read(ref_path.replace("\\", "/"), dtype="float32")
+    # inf, fs2 = sf.read(inf_path.replace("\\", "/"), dtype="float32")
+
+    ref, fs = librosa.load(ref_path.replace("\\", "/"), sr=16000, mono=True)
+    inf, fs2 = librosa.load(inf_path.replace("\\", "/"), sr=16000, mono=True)
     assert fs == fs2, (fs, fs2)
     assert ref.shape == inf.shape, (ref.shape, inf.shape)
     scores = {}

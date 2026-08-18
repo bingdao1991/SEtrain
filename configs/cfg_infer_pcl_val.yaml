@@ -1,0 +1,14 @@
+# 双路 ULUNAS_PCL 推理配置（验证集示例）
+# 使用前请改 network.checkpoint 为你实验目录下的实际 .tar
+
+test_dataset:
+  # 验证集 noisy；clean 与 noisy 同名，目录名 noisy→clean
+  noisy_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/val_noisy
+  clean_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/val_clean
+
+network:
+  config: configs/cfg_train_pcl.yaml
+  # 改成你的最终权重，例如 best_model_XXX.tar 或 model_100.tar
+  checkpoint: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_pcl_2026-08-15-10h12m/checkpoints/best_model_100.tar
+  speech_out_dir: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_pcl_2026-08-15-10h12m/infer_val/speech
+  noise_out_dir: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_pcl_2026-08-15-10h12m/infer_val/noise

@@ -6,8 +6,14 @@ from torch.utils import data
 import numpy as np
 import random
 
-NOISY_DATABASE_TRAIN = '/data/ssd0/xiaobin.rong/Datasets/DNS3/train_noisy'
-NOISY_DATABASE_VALID = '/data/ssd0/xiaobin.rong/Datasets/DNS3/dev_noisy'
+# NOISY_DATABASE_TRAIN = '/data/ssd0/xiaobin.rong/Datasets/DNS3/train_noisy'
+# NOISY_DATABASE_VALID = '/data/ssd0/xiaobin.rong/Datasets/DNS3/dev_noisy'
+
+NOISY_DATABASE_TRAIN = 'C:/develop/SE/2/SEtrain/prepare_datasets/DNS/train_noisy'
+NOISY_DATABASE_VALID = 'C:/develop/SE/2/SEtrain/prepare_datasets/DNS/val_noisy'
+
+# NOISY_DATABASE_TRAIN = 'C:/develop/SE/2/SEtrain/prepare_datasets/DNS/n_learn/train_noisy'
+# NOISY_DATABASE_VALID = 'C:/develop/SE/2/SEtrain/prepare_datasets/DNS/n_learn/val_noisy'
 
 class DNS3Dataset(torch.utils.data.Dataset):
     def __init__(
@@ -57,6 +63,94 @@ class DNS3Dataset(torch.utils.data.Dataset):
             return self.num_data_per_epoch
         else:
             return len(self.noisy_database_valid)
+
+
+class DNS3DualOutputDataset(DNS3Dataset):
+    """
+    DNS3 dataset returning (noisy, clean, noise).
+    noise GT is computed as noisy - clean when noise_source='residual'.
+    """
+
+    def __init__(
+        self,
+        fs=16000,
+        length_in_seconds=8,
+        num_data_tot=720000,
+        num_data_per_epoch=40000,
+        random_start_point=False,
+        train=True,
+        noise_source: str = "residual",
+        noise_dir=None,
+        return_noise: bool = True,
+    ):
+        super().__init__(
+            fs=fs,
+            length_in_seconds=length_in_seconds,
+            num_data_tot=num_data_tot,
+            num_data_per_epoch=num_data_per_epoch,
+            random_start_point=random_start_point,
+            train=train,
+        )
+        self.noise_source = noise_source
+        self.noise_dir = noise_dir
+        self.return_noise = return_noise
+
+    @staticmethod
+    def compute_residual_noise(noisy, clean):
+        length = min(len(noisy), len(clean))
+        return noisy[:length] - clean[:length]
+
+    def _load_noise_file(self, noisy_path, start, length):
+        from pathlib import Path
+
+        noise_path = noisy_path.replace("noisy", "noise")
+        if self.noise_dir is not None:
+            name = Path(noisy_path).name
+            noise_path = str(Path(self.noise_dir) / name)
+        noise, _ = sf.read(noise_path, dtype="float32", start=start, stop=start + length)
+        return noise
+
+    def __getitem__(self, idx):
+        if self.train:
+            noisy_list = self.noisy_data_train
+        else:
+            noisy_list = self.noisy_database_valid
+
+        if self.random_start_point:
+            begin_s = int(np.random.uniform(0, 10 - self.length_in_seconds)) * self.fs
+            noisy, _ = sf.read(
+                noisy_list[idx], dtype="float32", start=begin_s, stop=begin_s + self.L
+            )
+            clean, _ = sf.read(
+                noisy_list[idx].replace("noisy", "clean"),
+                dtype="float32",
+                start=begin_s,
+                stop=begin_s + self.L,
+            )
+        else:
+            noisy, _ = sf.read(noisy_list[idx], dtype="float32", start=0, stop=self.L)
+            clean, _ = sf.read(
+                noisy_list[idx].replace("noisy", "clean"), dtype="float32", start=0, stop=self.L
+            )
+            begin_s = 0
+
+        if self.noise_source == "file":
+            noise = self._load_noise_file(noisy_list[idx], begin_s, self.L)
+        else:
+            noise = self.compute_residual_noise(noisy, clean)
+
+        if not self.return_noise:
+            return noisy, clean
+        return noisy, clean, noise
+
+    @staticmethod
+    def collate_fn(batch):
+        noisy, clean, noise = zip(*batch)
+        return (
+            torch.tensor(noisy, dtype=torch.float32),
+            torch.tensor(clean, dtype=torch.float32),
+            torch.tensor(noise, dtype=torch.float32),
+        )
 
 
 if __name__=='__main__':

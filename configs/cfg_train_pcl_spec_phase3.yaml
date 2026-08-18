@@ -1,0 +1,110 @@
+# Phase3: 导入正在训练的双路 phase2 权重，再开 Spec 域 PCL。
+# 用法（phase2 训完后改 dual_checkpoint 路径）：
+#   python train_pcl_spec.py -C configs/cfg_train_pcl_spec_phase3.yaml -D 0
+#
+# 说明：
+# - dual_checkpoint 可来自 train_pcl.py（ULUNAS_PCL）或 train_pcl_spec.py 的 phase2
+# - 两边 backbone 权重键一致，可直接 load；不要导入旧版 latent PCL 的 pcl_extractor
+# - 本配置会新建 exp_ulunas_pcl_spec_* 目录，不影响当前 phase2 实验
+
+network_config:
+  n_fft: 512
+  hop_len: 256
+  win_len: 512
+  mask_activation: sigmoid
+  enforce_mask_sum: false
+
+pretrain:
+  enabled: true
+  # 必改：填你 phase2 双路最终权重（train_pcl 的 ULUNAS_PCL .tar）
+  # 例：.../exp_ulunas_pcl_pcl_2026-08-15-10h12m/checkpoints/best_model_100.tar
+  # 或：.../checkpoints/model_100.tar
+  dual_checkpoint: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_pcl_2026-08-15-10h12m/checkpoints/best_model_100.tar
+  ulunas_checkpoint: null
+  init_noise_mask: complement
+
+pcl:
+  enabled: true
+  sampler_type: point            # point=PatchSampleF；conv2d 见 cfg_train_pcl_spec_phase3_conv2d.yaml
+  in_channels: 1
+  num_patches: 256
+  embed_dim: 128
+  use_mlp: true
+  temperature: 0.07
+  warmup_steps: 10000
+  lambda_pcl_target: 2.0
+
+training_phase: phase3             # 开启 PCL warmup
+
+DDP:
+  world_size: 1
+
+optimizer:
+  lr: 0.0005
+
+scheduler:
+  kwargs:
+    warmup_steps: 25000
+    decay_until_step: 250000
+    max_lr: 1e-3
+    min_lr: 1e-6
+  update_interval: step
+
+FFT:
+  n_fft: 512
+  hop_length: 256
+  win_length: 512
+
+loss:
+  n_fft: ${FFT.n_fft}
+  hop_len: ${FFT.hop_length}
+  win_len: ${FFT.win_length}
+  compress_factor: 0.3
+  eps: 1e-12
+  lamda_ri: 30
+  lamda_mag: 70
+  lambda_speech: 1.0
+  lambda_noise: 0.5
+  lambda_recon: 0.3
+  lambda_mask_sum: 0.0
+  recon_loss_type: sisnr
+
+train_dataset:
+  length_in_seconds: 10
+  num_data_tot: 10000
+  num_data_per_epoch: 10000
+  random_start_point: false
+  train: true
+  noise_source: residual
+  noise_dir: null
+  return_noise: true
+
+train_dataloader:
+  batch_size: 16
+  num_workers: 0
+  drop_last: true
+  pin_memory: false
+
+validation_dataset:
+  length_in_seconds: 10
+  random_start_point: false
+  train: false
+  noise_source: residual
+  noise_dir: null
+  return_noise: true
+
+validation_dataloader:
+  batch_size: 4
+  num_workers: 0
+  pin_memory: false
+
+samplerate: 16000
+
+trainer:
+  epochs: 100
+  save_checkpoint_interval: 1
+  clip_grad_norm_value: 3.0
+  exp_path: C:/develop/SE/SEtrain/prepare_datasets/exp_ulunas_pcl_spec
+  resume: false                    # phase3 新开跑；只导入 model，不 resume opt/step
+  resume_datetime: 2026-07-08-00h00m
+  use_validation: false

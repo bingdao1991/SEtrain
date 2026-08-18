@@ -1,10 +1,24 @@
 test_dataset: 
-  noisy_dir: /data/ssd0/xiaobin.rong/Datasets/DNS3/test_noisy/
-  clean_dir: /data/ssd0/xiaobin.rong/Datasets/DNS3/test_clean/
+#  noisy_dir: /data/ssd0/xiaobin.rong/Datasets/DNS3/test_noisy/
+#  clean_dir: /data/ssd0/xiaobin.rong/Datasets/DNS3/test_clean/
+#  noisy_dir: C:/develop/dataset/from_DNS/test_noisy
+#  clean_dir: C:/develop/dataset/from_DNS/test_clean
+
+#  noisy_dir: C:/develop/dataset/test_noisy
+#  clean_dir: C:/develop/dataset/test_clean
+
+# for noise evalutation by Qwen2audio
+#  noisy_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/n_learn/test_noisy
+  clean_dir: C:/develop/SE/2/SEtrain/prepare_datasets/DNS/n_learn/test_clean
+#  noisy_dir: C:/develop/SE/SEtrain/prepare_datasets/DNS/test_urban_noisy
+
+  noisy_dir: C:/develop/dataset/MMAU-test-mini/mmau_extracted/audio_16k
 
 network:
-  exp_path: /data/ssd0/xiaobin.rong/study_se/DNS3/exp_gtcrn_2025-03-31-11h26m
+#  exp_path: C:/develop/SE/2/SEtrain/prepare_datasets/exp_gtcrn_2026-04-16-22h48m   # separate speech
+  exp_path: C:/develop/SE/2/SEtrain/prepare_datasets/exp_gtcrn_2026-04-17-20h07m  # separate noise
   config: ${network.exp_path}/config.yaml
-  ckpt_name: model_001
+#  ckpt_name: best_model_098 # speech model
+  ckpt_name: model_085     # noise model
   checkpoint: ${network.exp_path}/checkpoints/${network.ckpt_name}.tar
-  enh_folder: ${network.exp_path}/${network.ckpt_name}/enhanced
+  enh_folder: ${network.exp_path}/${network.ckpt_name}/enhanced_mmau_noise
